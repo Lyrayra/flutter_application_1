@@ -1,15 +1,21 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:xterm/xterm.dart';
 import '../services/ssh_settings.dart';
+import '../services/ssh_service.dart';
 import '../screens/settings_screen.dart';
 
 class SshTerminalPanel extends StatefulWidget {
   final VoidCallback? onSettingsChanged;
-  const SshTerminalPanel({super.key, this.onSettingsChanged});
+  final SshService sshService;
+
+  const SshTerminalPanel({
+    super.key,
+    this.onSettingsChanged,
+    this.sshService = const SshService(),
+  });
 
   @override
   State<SshTerminalPanel> createState() => _SshTerminalPanelState();
@@ -45,12 +51,11 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
     );
 
     try {
-      final socket = await SSHSocket.connect(_settings.host, _settings.port);
+      final socket = await widget.sshService.connect(_settings.host, _settings.port);
 
       if (_settings.authType == 'key') {
         // 秘密鍵認証
-        final keyFile = File(_settings.keyPath);
-        if (!await keyFile.exists()) {
+        if (!await widget.sshService.keyFileExists(_settings.keyPath)) {
           _terminal.write(
             '\x1B[31m[Error] 秘密鍵ファイルが見つかりません: ${_settings.keyPath}\x1B[0m\r\n',
           );
@@ -58,15 +63,15 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
           socket.destroy();
           return;
         }
-        final keyContent = await keyFile.readAsString();
-        _client = SSHClient(
+        final keyContent = await widget.sshService.readKeyFile(_settings.keyPath);
+        _client = widget.sshService.createClient(
           socket,
           username: _settings.username,
-          identities: SSHKeyPair.fromPem(keyContent),
+          identities: widget.sshService.parseKey(keyContent),
         );
       } else {
         // パスワード認証
-        _client = SSHClient(
+        _client = widget.sshService.createClient(
           socket,
           username: _settings.username,
           onPasswordRequest: () => _settings.password,

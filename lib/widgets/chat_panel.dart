@@ -141,121 +141,132 @@ class ChatPanelState extends State<ChatPanel> {
 
     try {
       final response = await _gemini.sendMessage(text);
-      setState(() {
-        _messages.add(ChatMessage(text: response));
-      });
-      _scrollToBottom();
+      await _processAiResponse(response);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(text: '❌ エラー: $e', isSystem: true));
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+        _scrollToBottom();
+      }
+    }
+  }
 
-      // コマンド自動実行
-      final commands = GeminiService.extractCommands(response);
-      if (commands.isNotEmpty) {
-        // --- コマンド実行のユーザー確認 ---
-        final commandText = commands.join('\n');
-        final bool? shouldExecute = await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('コマンドの実行確認'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('AIが以下のコマンドを実行しようとしています。許可しますか？'),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        commandText,
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                        ),
-                      ),
+  /// AIからの応答を処理し、必要に応じてコマンドを実行する
+  Future<void> _processAiResponse(String response) async {
+    if (!mounted) return;
+    setState(() {
+      _messages.add(ChatMessage(text: response));
+    });
+    _scrollToBottom();
+
+    // コマンド自動実行
+    final commands = GeminiService.extractCommands(response);
+    if (commands.isEmpty) return;
+
+    // --- コマンド実行のユーザー確認 ---
+    if (!mounted) return;
+    final commandText = commands.join('\n');
+    final bool? shouldExecute = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('コマンドの実行確認'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('AIが以下のコマンドを実行しようとしています。許可しますか？'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    commandText,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 13,
                     ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text(
-                    'キャンセル',
-                    style: TextStyle(color: Colors.red),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('実行する'),
-                ),
               ],
-            );
-          },
-        );
-
-        if (shouldExecute != true) {
-          setState(() {
-            _messages.add(
-              ChatMessage(
-                text: '🚫 ユーザーによってコマンドの実行がキャンセルされました',
-                isSystem: true,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'キャンセル',
+                style: TextStyle(color: Colors.red),
               ),
-            );
-          });
-          _scrollToBottom();
-
-          final feedback = await _gemini.sendMessage(
-            'ユーザーがセキュリティ上の理由でコマンドの実行をキャンセルしました。別の方法を提案するか、実行しなかったことを認識してください。',
-          );
-          setState(() {
-            _messages.add(ChatMessage(text: feedback));
-          });
-          _scrollToBottom();
-          return;
-        }
-
-        final List<String> results = [];
-        for (final command in commands) {
-          setState(() {
-            _messages.add(
-              ChatMessage(text: '⚙️ コマンド実行中: $command', isSystem: true),
-            );
-          });
-          _scrollToBottom();
-
-          final output = await _executeSshCommand(command);
-          results.add('[$command] の結果:\n$output');
-
-          setState(() {
-            _messages.add(
-              ChatMessage(text: '📋 実行結果:\n$output', isSystem: true),
-            );
-          });
-          _scrollToBottom();
-        }
-
-        // 全ての結果をまとめてAIにフィードバック
-        final feedback = await _gemini.sendMessage(
-          '以下のコマンドを実行しました:\n${results.join('\n\n')}',
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('実行する'),
+            ),
+          ],
         );
+      },
+    );
+
+    if (shouldExecute != true) {
+      if (mounted) {
         setState(() {
-          _messages.add(ChatMessage(text: feedback));
+          _messages.add(
+            ChatMessage(
+              text: '🚫 ユーザーによってコマンドの実行がキャンセルされました',
+              isSystem: true,
+            ),
+          );
         });
         _scrollToBottom();
       }
-    } catch (e) {
-      setState(() {
-        _messages.add(ChatMessage(text: '❌ エラー: $e', isSystem: true));
-      });
-    } finally {
-      setState(() => _isSending = false);
-      _scrollToBottom();
+
+      final feedback = await _gemini.sendMessage(
+        'ユーザーがセキュリティ上の理由でコマンドの実行をキャンセルしました。別の方法を提案するか、実行しなかったことを認識してください。',
+      );
+      // 再帰的に処理を継続
+      await _processAiResponse(feedback);
+      return;
     }
+
+    final List<String> results = [];
+    for (final command in commands) {
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            ChatMessage(text: '⚙️ コマンド実行中: $command', isSystem: true),
+          );
+        });
+        _scrollToBottom();
+      }
+
+      final output = await _executeSshCommand(command);
+      results.add('[$command] の結果:\n$output');
+
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(text: '📋 実行結果:\n$output', isSystem: true));
+        });
+        _scrollToBottom();
+      }
+    }
+
+    // 全ての結果をまとめてAIにフィードバック
+    final feedback = await _gemini.sendMessage(
+      '以下のコマンドを実行しました:\n${results.join('\n\n')}',
+    );
+    // フィードバックに対するAIの応答を再帰的に処理
+    await _processAiResponse(feedback);
   }
 
   void _scrollToBottom() {
