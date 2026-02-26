@@ -41,7 +41,8 @@ class GeminiService {
 
   /// AIの応答からすべての実行コマンドを抽出する
   static List<String> extractCommands(String response) {
-    final regex = RegExp(r'コマンドを実行します:\s*(.+)');
+    // 半角・全角の両方のコロンに対応し、複数行のコマンド抽出を可能にする
+    final regex = RegExp(r'コマンドを実行します[：:]\s*(.+)', multiLine: true);
     final matches = regex.allMatches(response);
     return matches
         .map((m) => m.group(1)?.trim() ?? '')
