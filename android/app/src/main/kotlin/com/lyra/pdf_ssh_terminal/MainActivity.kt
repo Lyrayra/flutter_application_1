@@ -1,4 +1,4 @@
-package com.jules.pdf_ssh_terminal
+package com.lyra.pdf_ssh_terminal
 
 import io.flutter.embedding.android.FlutterActivity
 

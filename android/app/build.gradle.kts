@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jules.pdf_ssh_terminal"
+    namespace = "com.lyra.pdf_ssh_terminal"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.jules.pdf_ssh_terminal"
+        applicationId = "com.lyra.pdf_ssh_terminal"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
