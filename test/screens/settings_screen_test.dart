@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/screens/settings_screen.dart';
-import 'package:flutter_application_1/services/ssh_settings.dart';
 
 void main() {
   setUp(() {
@@ -10,9 +9,7 @@ void main() {
   });
 
   Future<void> pumpSettingsScreen(WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: SettingsScreen(),
-    ));
+    await tester.pumpWidget(const MaterialApp(home: SettingsScreen()));
     await tester.pumpAndSettle(); // Wait for FutureBuilder/initState
   }
 
@@ -24,7 +21,9 @@ void main() {
   }
 
   group('SettingsScreen Port Validation Tests', () {
-    testWidgets('Valid port (8022) shows no error', (WidgetTester tester) async {
+    testWidgets('Valid port (8022) shows no error', (
+      WidgetTester tester,
+    ) async {
       await pumpSettingsScreen(tester);
 
       final portField = find.widgetWithText(TextFormField, 'ポート番号');
@@ -50,7 +49,9 @@ void main() {
       expect(find.text('有効なポート番号を入力してください (1-65535)'), findsOneWidget);
     });
 
-    testWidgets('Invalid port (65536) shows error', (WidgetTester tester) async {
+    testWidgets('Invalid port (65536) shows error', (
+      WidgetTester tester,
+    ) async {
       await pumpSettingsScreen(tester);
 
       final portField = find.widgetWithText(TextFormField, 'ポート番号');

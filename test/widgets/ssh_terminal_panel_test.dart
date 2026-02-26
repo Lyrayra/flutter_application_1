@@ -6,19 +6,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dartssh2/dartssh2.dart';
-import 'package:xterm/xterm.dart';
 
 import 'package:flutter_application_1/widgets/ssh_terminal_panel.dart';
 import 'package:flutter_application_1/services/ssh_service.dart';
 
 // Mocks
 class MockSshService extends Mock implements SshService {}
+
 class MockSSHSocket extends Mock implements SSHSocket {}
+
 class MockSSHClient extends Mock implements SSHClient {}
+
 class MockSSHSession extends Mock implements SSHSession {}
 
 // Fakes
 class FakeSSHKeyPair extends Fake implements SSHKeyPair {}
+
 class FakeSSHSocket extends Fake implements SSHSocket {}
 
 void main() {
@@ -44,16 +47,22 @@ void main() {
 
     // Default mocks behavior
     when(() => mockSSHSocket.destroy()).thenAnswer((_) {});
-    when(() => mockSshService.connect(any(), any())).thenAnswer((_) async => mockSSHSocket);
+    when(
+      () => mockSshService.connect(any(), any()),
+    ).thenAnswer((_) async => mockSSHSocket);
 
-    when(() => mockSshService.createClient(
-      any(),
-      username: any(named: 'username'),
-      identities: any(named: 'identities'),
-      onPasswordRequest: any(named: 'onPasswordRequest'),
-    )).thenReturn(mockSSHClient);
+    when(
+      () => mockSshService.createClient(
+        any(),
+        username: any(named: 'username'),
+        identities: any(named: 'identities'),
+        onPasswordRequest: any(named: 'onPasswordRequest'),
+      ),
+    ).thenReturn(mockSSHClient);
 
-    when(() => mockSSHClient.shell(pty: any(named: 'pty'))).thenAnswer((_) async => mockSSHSession);
+    when(
+      () => mockSSHClient.shell(pty: any(named: 'pty')),
+    ).thenAnswer((_) async => mockSSHSession);
     when(() => mockSSHClient.done).thenAnswer((_) => Completer<void>().future);
     when(() => mockSSHClient.close()).thenAnswer((_) async {});
 
@@ -65,8 +74,12 @@ void main() {
       stderrController.close();
     });
 
-    when(() => mockSSHSession.stdout).thenAnswer((_) => stdoutController.stream);
-    when(() => mockSSHSession.stderr).thenAnswer((_) => stderrController.stream);
+    when(
+      () => mockSSHSession.stdout,
+    ).thenAnswer((_) => stdoutController.stream);
+    when(
+      () => mockSSHSession.stderr,
+    ).thenAnswer((_) => stderrController.stream);
 
     when(() => mockSSHSession.resizeTerminal(any(), any())).thenReturn(null);
     when(() => mockSSHSession.write(any())).thenReturn(null);
@@ -76,8 +89,12 @@ void main() {
     when(() => mockSshService.parseKey(any())).thenReturn([FakeSSHKeyPair()]);
 
     // File reading mock
-    when(() => mockSshService.keyFileExists(any())).thenAnswer((_) async => true);
-    when(() => mockSshService.readKeyFile(any())).thenAnswer((_) async => 'fake_key_content');
+    when(
+      () => mockSshService.keyFileExists(any()),
+    ).thenAnswer((_) async => true);
+    when(
+      () => mockSshService.readKeyFile(any()),
+    ).thenAnswer((_) async => 'fake_key_content');
   });
 
   testWidgets('Initial connection state', (WidgetTester tester) async {
@@ -87,11 +104,11 @@ void main() {
       return mockSSHSocket;
     });
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SshTerminalPanel(sshService: mockSshService),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SshTerminalPanel(sshService: mockSshService)),
       ),
-    ));
+    );
 
     // Allow SshSettings.load to complete and _connect to start
     await tester.pump();
@@ -104,7 +121,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
   });
 
-  testWidgets('Successful connection with password', (WidgetTester tester) async {
+  testWidgets('Successful connection with password', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({
       'ssh_auth_type': 'password',
       'ssh_host': 'test.host',
@@ -113,11 +132,11 @@ void main() {
       'ssh_password': 'password',
     });
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SshTerminalPanel(sshService: mockSshService),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SshTerminalPanel(sshService: mockSshService)),
       ),
-    ));
+    );
 
     // Trigger init
     await tester.pump();
@@ -125,11 +144,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     verify(() => mockSshService.connect('test.host', 2222)).called(1);
-    verify(() => mockSshService.createClient(
-      any(),
-      username: 'user',
-      onPasswordRequest: any(named: 'onPasswordRequest'),
-    )).called(1);
+    verify(
+      () => mockSshService.createClient(
+        any(),
+        username: 'user',
+        onPasswordRequest: any(named: 'onPasswordRequest'),
+      ),
+    ).called(1);
 
     verify(() => mockSSHClient.shell(pty: any(named: 'pty'))).called(1);
 
@@ -143,14 +164,16 @@ void main() {
     expect(find.text('接続済み'), findsOneWidget);
   });
 
-  testWidgets('Connection error displays error status', (WidgetTester tester) async {
-     when(() => mockSshService.connect(any(), any())).thenThrow('Network error');
+  testWidgets('Connection error displays error status', (
+    WidgetTester tester,
+  ) async {
+    when(() => mockSshService.connect(any(), any())).thenThrow('Network error');
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SshTerminalPanel(sshService: mockSshService),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SshTerminalPanel(sshService: mockSshService)),
       ),
-    ));
+    );
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -164,13 +187,15 @@ void main() {
       'ssh_key_path': '/path/to/key',
     });
 
-    when(() => mockSshService.keyFileExists(any())).thenAnswer((_) async => false);
+    when(
+      () => mockSshService.keyFileExists(any()),
+    ).thenAnswer((_) async => false);
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: SshTerminalPanel(sshService: mockSshService),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: SshTerminalPanel(sshService: mockSshService)),
       ),
-    ));
+    );
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));

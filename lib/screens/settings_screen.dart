@@ -83,12 +83,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       rightPanelMode: _rightPanelMode,
     );
     await settings.save();
-    if (mounted) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('設定を保存しました')));
+    Navigator.of(context).pop(true);
+  }
+
+  Future<void> _refreshModels() async {
+    final key = _geminiApiKeyCtrl.text.trim();
+    if (key.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('設定を保存しました')));
-      Navigator.of(context).pop(true);
+      ).showSnackBar(const SnackBar(content: Text('先にAPIキーを入力してください')));
+      return;
     }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('モデル一覧を取得中...')));
+    await SshSettings.fetchModels(key);
+    if (!mounted) return;
+    setState(() {
+      if (!SshSettings.availableModels.contains(_geminiModel)) {
+        _geminiModel = SshSettings.availableModels.first;
+      }
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('モデル一覧を更新しました')));
   }
 
   @override
@@ -176,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: _geminiModel,
+                            initialValue: _geminiModel,
                             decoration: const InputDecoration(
                               labelText: 'Gemini モデル (一覧取得にはAPIキーが必要)',
                               border: OutlineInputBorder(),
@@ -201,34 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         IconButton(
                           icon: const Icon(Icons.refresh),
                           tooltip: 'モデル一覧を取得',
-                          onPressed: () async {
-                            final key = _geminiApiKeyCtrl.text.trim();
-                            if (key.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('先にAPIキーを入力してください'),
-                                ),
-                              );
-                              return;
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('モデル一覧を取得中...')),
-                            );
-                            await SshSettings.fetchModels(key);
-                            if (mounted) {
-                              setState(() {
-                                if (!SshSettings.availableModels.contains(
-                                  _geminiModel,
-                                )) {
-                                  _geminiModel =
-                                      SshSettings.availableModels.first;
-                                }
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('モデル一覧を更新しました')),
-                              );
-                            }
-                          },
+                          onPressed: _refreshModels,
                         ),
                       ],
                     ),
