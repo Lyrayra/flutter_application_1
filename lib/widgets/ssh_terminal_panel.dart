@@ -8,7 +8,8 @@ import '../services/ssh_settings.dart';
 import '../screens/settings_screen.dart';
 
 class SshTerminalPanel extends StatefulWidget {
-  const SshTerminalPanel({super.key});
+  final VoidCallback? onSettingsChanged;
+  const SshTerminalPanel({super.key, this.onSettingsChanged});
 
   @override
   State<SshTerminalPanel> createState() => _SshTerminalPanelState();
@@ -39,7 +40,9 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
     if (_isConnecting) return;
     setState(() => _isConnecting = true);
 
-    _terminal.write('Connecting to ${_settings.host}:${_settings.port} ...\r\n');
+    _terminal.write(
+      'Connecting to ${_settings.host}:${_settings.port} ...\r\n',
+    );
 
     try {
       final socket = await SSHSocket.connect(_settings.host, _settings.port);
@@ -153,10 +156,11 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
   }
 
   Future<void> _openSettings() async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    );
+    final result = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const SettingsScreen()));
     if (result == true) {
+      widget.onSettingsChanged?.call();
       // 設定が保存されたので再接続
       await _reconnect();
     }

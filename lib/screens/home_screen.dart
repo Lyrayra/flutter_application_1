@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../services/ssh_settings.dart';
 import '../widgets/pdf_viewer_panel.dart';
 import '../widgets/ssh_terminal_panel.dart';
+import '../widgets/chat_panel.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,10 +13,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String _rightPanelMode = 'chat';
+
   @override
   void initState() {
     super.initState();
     _requestPermissions();
+    _loadPanelMode();
+  }
+
+  Future<void> _loadPanelMode() async {
+    final settings = await SshSettings.load();
+    if (mounted) {
+      setState(() => _rightPanelMode = settings.rightPanelMode);
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -51,7 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Expanded(child: PdfViewerPanel()),
             Container(width: 1, color: Colors.grey[400]),
-            const Expanded(child: SshTerminalPanel()),
+            Expanded(
+              child: _rightPanelMode == 'terminal'
+                  ? SshTerminalPanel(onSettingsChanged: _loadPanelMode)
+                  : ChatPanel(onSettingsChanged: _loadPanelMode),
+            ),
           ],
         ),
       ),
