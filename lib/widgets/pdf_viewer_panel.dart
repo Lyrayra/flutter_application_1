@@ -58,6 +58,7 @@ class _PdfViewerPanelState extends State<PdfViewerPanel> {
         _fileName = name ?? _fileName;
         _isPdf = false;
         _textContent = content;
+        _reloadKey++;
       });
     } catch (e) {
       if (mounted) {
@@ -165,6 +166,7 @@ class _PdfViewerPanelState extends State<PdfViewerPanel> {
 
     // テキストファイル表示
     return Container(
+      key: ValueKey('text_$_reloadKey'),
       color: const Color(0xFFFAFAFA),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
