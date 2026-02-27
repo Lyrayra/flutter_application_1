@@ -116,6 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.folder),
                       ),
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 24),
 
@@ -133,6 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'IPアドレスを入力してください'
                           : null,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -150,6 +152,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         }
                         return null;
                       },
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -162,6 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'ユーザー名を入力してください'
                           : null,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 20),
                     _sectionTitle('認証方法'),
@@ -198,6 +202,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               validator: (v) => (v == null || v.trim().isEmpty)
                                   ? '秘密鍵ファイルのパスを指定してください'
                                   : null,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _save(),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -225,6 +231,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         validator: (v) =>
                             (v == null || v.isEmpty) ? 'パスワードを入力してください' : null,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _save(),
                       ),
                     ],
                     const SizedBox(height: 32),
