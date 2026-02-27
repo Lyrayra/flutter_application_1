@@ -46,6 +46,22 @@ void main() {
       expect(settings.linuxPath, '/home/user');
     });
 
+    test('load merges partial saved values with defaults', () async {
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 'partial.com',
+        'ssh_port': 9000,
+      });
+
+      final settings = await SshSettings.load();
+      expect(settings.host, 'partial.com');
+      expect(settings.port, 9000);
+      // Verify missing values fall back to defaults
+      expect(settings.username, SshSettings.defaultUsername);
+      expect(settings.authType, 'key');
+      expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.linuxPath, SshSettings.defaultLinuxPath);
+    });
+
     test('save writes values to SharedPreferences', () async {
       final settings = SshSettings(
         host: 'saved.com',
@@ -67,6 +83,20 @@ void main() {
       expect(loadedSettings.keyPath, '/saved/key');
       expect(loadedSettings.password, 'savedpass');
       expect(loadedSettings.linuxPath, '/saved/linux');
+    });
+
+    test('save persists values to underlying storage', () async {
+      final settings = SshSettings(
+        host: 'directcheck.com',
+        port: 1234,
+      );
+
+      await settings.save();
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('ssh_host'), 'directcheck.com');
+      expect(prefs.getInt('ssh_port'), 1234);
+      expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
   });
 }
