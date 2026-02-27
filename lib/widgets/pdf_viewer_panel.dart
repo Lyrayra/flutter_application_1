@@ -124,15 +124,34 @@ class _PdfViewerPanelState extends State<PdfViewerPanel> {
 
   Widget _buildContent() {
     if (_filePath == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.description_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            const Icon(Icons.description_outlined, size: 80, color: Colors.grey),
+            const SizedBox(height: 24),
             Text(
-              '左上のボタンからファイルを選択してください',
-              style: TextStyle(color: Colors.grey, fontSize: 16),
+              'PDFやテキストファイルを表示できます',
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _pickFile,
+              icon: const Icon(Icons.folder_open),
+              label: const Text('ファイルを開く'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.blueGrey[900],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
