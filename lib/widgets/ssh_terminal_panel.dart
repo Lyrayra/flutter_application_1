@@ -9,11 +9,15 @@ import '../screens/settings_screen.dart';
 
 class SshTerminalPanel extends StatefulWidget {
   final VoidCallback? onSettingsChanged;
+  final VoidCallback? onToggleViewer;
+  final bool isViewerExpanded;
   final SshService sshService;
 
   const SshTerminalPanel({
     super.key,
     this.onSettingsChanged,
+    this.onToggleViewer,
+    this.isViewerExpanded = true,
     this.sshService = const SshService(),
   });
 
@@ -38,12 +42,14 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
 
   Future<void> _loadSettingsAndConnect() async {
     final settings = await SshSettings.load();
+    if (!mounted) return;
     setState(() => _settings = settings);
     await _connect();
   }
 
   Future<void> _connect() async {
     if (_isConnecting) return;
+    if (!mounted) return;
     setState(() => _isConnecting = true);
 
     _terminal.write(
@@ -59,6 +65,7 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
           _terminal.write(
             '\x1B[31m[Error] 秘密鍵ファイルが見つかりません: ${_settings.keyPath}\x1B[0m\r\n',
           );
+          if (!mounted) return;
           setState(() => _isConnecting = false);
           socket.destroy();
           return;
@@ -84,10 +91,18 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
       );
 
       _terminal.write('\x1B[32mConnected!\x1B[0m\r\n');
+      if (!mounted) return;
       setState(() {
         _isConnected = true;
         _isConnecting = false;
       });
+
+      // 設定されたLinuxパスに移動
+      if (_settings.linuxPath.isNotEmpty) {
+        _session!.write(
+          Uint8List.fromList(utf8.encode('cd ${_settings.linuxPath}\n')),
+        );
+      }
 
       // SSH stdout → ターミナル表示
       _session!.stdout.listen(
@@ -120,6 +135,7 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
       _client!.done.then((_) => _onDisconnected());
     } catch (e) {
       _terminal.write('\r\n\x1B[31m[Connection Error] $e\x1B[0m\r\n');
+      if (!mounted) return;
       setState(() {
         _isConnected = false;
         _isConnecting = false;
@@ -154,8 +170,10 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
 
   Future<void> _reconnect() async {
     await _disconnect();
+    if (!mounted) return;
     _terminal.write('\r\n--- 再接続中 ---\r\n');
     final settings = await SshSettings.load();
+    if (!mounted) return;
     setState(() => _settings = settings);
     await _connect();
   }
@@ -207,14 +225,29 @@ class _SshTerminalPanelState extends State<SshTerminalPanel> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Row(
         children: [
+          if (widget.onToggleViewer != null)
+            IconButton(
+              icon: Icon(
+                widget.isViewerExpanded
+                    ? Icons.chevron_left
+                    : Icons.chevron_right,
+                color: Colors.white70,
+              ),
+              tooltip: widget.isViewerExpanded ? 'ビューワーを閉じる' : 'ビューワーを開く',
+              onPressed: widget.onToggleViewer,
+              iconSize: 20,
+            ),
           const Icon(Icons.terminal, color: Colors.white70, size: 20),
           const SizedBox(width: 8),
-          Text(
-            'SSH (${_settings.host}:${_settings.port})',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+          Flexible(
+            child: Text(
+              'SSH (${_settings.host}:${_settings.port})',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
             ),
           ),
           const Spacer(),

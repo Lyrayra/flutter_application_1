@@ -17,10 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _keyPathCtrl;
   late TextEditingController _passwordCtrl;
   late TextEditingController _linuxPathCtrl;
-  late TextEditingController _geminiApiKeyCtrl;
   String _authType = 'key';
-  String _geminiModel = SshSettings.defaultGeminiModel;
-  String _rightPanelMode = 'chat';
   bool _isLoading = true;
 
   @override
@@ -32,7 +29,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _keyPathCtrl = TextEditingController();
     _passwordCtrl = TextEditingController();
     _linuxPathCtrl = TextEditingController();
-    _geminiApiKeyCtrl = TextEditingController();
     _loadSettings();
   }
 
@@ -46,12 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _keyPathCtrl.text = settings.keyPath;
       _passwordCtrl.text = settings.password;
       _linuxPathCtrl.text = settings.linuxPath;
-      _geminiApiKeyCtrl.text = settings.geminiApiKey;
-      _geminiModel = settings.geminiModel;
-      if (!SshSettings.availableModels.contains(_geminiModel)) {
-        _geminiModel = SshSettings.defaultGeminiModel;
-      }
-      _rightPanelMode = settings.rightPanelMode;
       _isLoading = false;
     });
   }
@@ -78,9 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       keyPath: _keyPathCtrl.text.trim(),
       password: _passwordCtrl.text,
       linuxPath: _linuxPathCtrl.text.trim(),
-      geminiApiKey: _geminiApiKeyCtrl.text.trim(),
-      geminiModel: _geminiModel,
-      rightPanelMode: _rightPanelMode,
     );
     await settings.save();
     if (!mounted) return;
@@ -88,29 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
     ).showSnackBar(const SnackBar(content: Text('設定を保存しました')));
     Navigator.of(context).pop(true);
-  }
-
-  Future<void> _refreshModels() async {
-    final key = _geminiApiKeyCtrl.text.trim();
-    if (key.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('先にAPIキーを入力してください')));
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('モデル一覧を取得中...')));
-    await SshSettings.fetchModels(key);
-    if (!mounted) return;
-    setState(() {
-      if (!SshSettings.availableModels.contains(_geminiModel)) {
-        _geminiModel = SshSettings.availableModels.first;
-      }
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('モデル一覧を更新しました')));
   }
 
   @override
@@ -121,7 +85,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _keyPathCtrl.dispose();
     _passwordCtrl.dispose();
     _linuxPathCtrl.dispose();
-    _geminiApiKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -153,79 +116,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.folder),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '右側パネル表示',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 'chat',
-                          label: Text('チャット'),
-                          icon: Icon(Icons.chat),
-                        ),
-                        ButtonSegment(
-                          value: 'terminal',
-                          label: Text('ターミナル'),
-                          icon: Icon(Icons.terminal),
-                        ),
-                      ],
-                      selected: {_rightPanelMode},
-                      onSelectionChanged: (s) =>
-                          setState(() => _rightPanelMode = s.first),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // --- AI設定 ---
-                    _sectionTitle('AI設定 (Gemini)'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _geminiApiKeyCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Gemini APIキー',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.key),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _geminiModel,
-                            decoration: const InputDecoration(
-                              labelText: 'Gemini モデル (一覧取得にはAPIキーが必要)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.memory),
-                            ),
-                            items: SshSettings.availableModels.map((model) {
-                              return DropdownMenuItem(
-                                value: model,
-                                child: Text(model),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _geminiModel = newValue;
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          tooltip: 'モデル一覧を取得',
-                          onPressed: _refreshModels,
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 24),
 

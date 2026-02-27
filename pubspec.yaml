@@ -40,8 +40,6 @@ dependencies:
   shared_preferences: ^2.3.0
   flutter_localizations:
     sdk: flutter
-  google_generative_ai: ^0.4.7
-  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
