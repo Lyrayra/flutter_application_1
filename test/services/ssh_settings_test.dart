@@ -98,5 +98,18 @@ void main() {
       expect(prefs.getInt('ssh_port'), 1234);
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
+
+    test('load handles invalid values and maintains types properly', () async {
+      // Dart's SharedPreferences mock enforces types to some extent,
+      // but we can test edge cases for values.
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': '', // empty string
+        'ssh_port': -1, // negative port
+      });
+
+      final settings = await SshSettings.load();
+      expect(settings.host, '');
+      expect(settings.port, -1);
+    });
   });
 }
