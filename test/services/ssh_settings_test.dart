@@ -23,6 +23,44 @@ void main() {
       final settings = await SshSettings.load();
       expect(settings.host, SshSettings.defaultHost);
       expect(settings.port, SshSettings.defaultPort);
+      expect(settings.username, SshSettings.defaultUsername);
+      expect(settings.authType, 'key');
+      expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.password, '');
+      expect(settings.linuxPath, SshSettings.defaultLinuxPath);
+    });
+
+    test('load returns default values when explicit nulls are retrieved via remove()', () async {
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 'temp',
+        'ssh_port': 1234,
+        'ssh_username': 'temp',
+        'ssh_auth_type': 'temp',
+        'ssh_key_path': 'temp',
+        'ssh_password': 'temp',
+        'linux_path': 'temp',
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('ssh_host');
+      await prefs.remove('ssh_port');
+      await prefs.remove('ssh_username');
+      await prefs.remove('ssh_auth_type');
+      await prefs.remove('ssh_key_path');
+      await prefs.remove('ssh_password');
+      await prefs.remove('linux_path');
+
+      expect(prefs.getString('ssh_host'), isNull);
+      expect(prefs.getInt('ssh_port'), isNull);
+
+      final settings = await SshSettings.load();
+      expect(settings.host, SshSettings.defaultHost);
+      expect(settings.port, SshSettings.defaultPort);
+      expect(settings.username, SshSettings.defaultUsername);
+      expect(settings.authType, 'key');
+      expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.password, '');
+      expect(settings.linuxPath, SshSettings.defaultLinuxPath);
     });
 
     test('load returns saved values from SharedPreferences', () async {
@@ -59,6 +97,7 @@ void main() {
       expect(settings.username, SshSettings.defaultUsername);
       expect(settings.authType, 'key');
       expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.password, '');
       expect(settings.linuxPath, SshSettings.defaultLinuxPath);
     });
 
@@ -91,12 +130,23 @@ void main() {
         port: 1234,
       );
 
+      // Mutating fields after instantiation to verify all properties are saved correctly
+      settings.username = 'directcheck_user';
+      settings.authType = 'password';
+      settings.keyPath = '/directcheck/key';
+      settings.password = 'directcheck_pass';
+      settings.linuxPath = '/directcheck/linux';
+
       await settings.save();
 
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('ssh_host'), 'directcheck.com');
       expect(prefs.getInt('ssh_port'), 1234);
-      expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
+      expect(prefs.getString('ssh_username'), 'directcheck_user');
+      expect(prefs.getString('ssh_auth_type'), 'password');
+      expect(prefs.getString('ssh_key_path'), '/directcheck/key');
+      expect(prefs.getString('ssh_password'), 'directcheck_pass');
+      expect(prefs.getString('linux_path'), '/directcheck/linux');
     });
   });
 }
