@@ -19,6 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _linuxPathCtrl;
   String _authType = 'key';
   bool _isLoading = true;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -223,11 +224,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ] else ...[
                       TextFormField(
                         controller: _passwordCtrl,
-                        obscureText: true,
-                        decoration: const InputDecoration(
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
                           labelText: 'パスワード',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock_outline),
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
                         validator: (v) =>
                             (v == null || v.isEmpty) ? 'パスワードを入力してください' : null,
