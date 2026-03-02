@@ -62,6 +62,38 @@ void main() {
       expect(settings.linuxPath, SshSettings.defaultLinuxPath);
     });
 
+    test('load falls back to defaults when keys are explicitly removed', () async {
+      // Initialize with dummy data
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 'dummy.com',
+        'ssh_port': 1234,
+        'ssh_username': 'dummyuser',
+        'ssh_auth_type': 'password',
+        'ssh_key_path': '/dummy/key',
+        'ssh_password': 'dummypassword',
+        'linux_path': '/dummy/linux',
+      });
+
+      // Remove specific keys
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('ssh_host');
+      await prefs.remove('ssh_username');
+      await prefs.remove('ssh_auth_type');
+
+      final settings = await SshSettings.load();
+
+      // Ensure defaults are used for removed keys
+      expect(settings.host, SshSettings.defaultHost);
+      expect(settings.username, SshSettings.defaultUsername);
+      expect(settings.authType, 'key');
+
+      // Ensure other values remain intact
+      expect(settings.port, 1234);
+      expect(settings.keyPath, '/dummy/key');
+      expect(settings.password, 'dummypassword');
+      expect(settings.linuxPath, '/dummy/linux');
+    });
+
     test('save writes values to SharedPreferences', () async {
       final settings = SshSettings(
         host: 'saved.com',
@@ -97,6 +129,19 @@ void main() {
       expect(prefs.getString('ssh_host'), 'directcheck.com');
       expect(prefs.getInt('ssh_port'), 1234);
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
+    });
+
+    test('load throws TypeError when SharedPreferences data has incorrect types', () async {
+      // Intentionally set an int for a key that expects a String
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 12345, // Should be String
+        'ssh_port': 'not_an_int', // Should be int
+      });
+
+      await expectLater(
+        () => SshSettings.load(),
+        throwsA(isA<TypeError>()),
+      );
     });
   });
 }
