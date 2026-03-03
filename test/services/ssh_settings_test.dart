@@ -98,5 +98,33 @@ void main() {
       expect(prefs.getInt('ssh_port'), 1234);
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
+
+    test('load handles invalid types in SharedPreferences gracefully', () async {
+      SharedPreferences.setMockInitialValues({
+        'ssh_port': 'invalid_port_string', // Should be int
+        'ssh_host': 12345, // Should be String
+        'ssh_auth_type': true, // Should be String
+      });
+
+      final settings = await SshSettings.load();
+
+      // Should fall back to default values gracefully
+      expect(settings.port, SshSettings.defaultPort);
+      expect(settings.host, SshSettings.defaultHost);
+      expect(settings.authType, 'key');
+    });
+
+    test('load handles missing values after removal by falling back to default', () async {
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 'temporary.com',
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('ssh_host');
+
+      final settings = await SshSettings.load();
+      expect(settings.host, SshSettings.defaultHost);
+    });
+
   });
 }
