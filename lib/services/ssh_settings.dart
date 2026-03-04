@@ -35,14 +35,31 @@ class SshSettings {
 
   static Future<SshSettings> load() async {
     final prefs = await SharedPreferences.getInstance();
+
+    String getStringSafe(String key, String defaultValue) {
+      try {
+        return prefs.getString(key) ?? defaultValue;
+      } catch (e) {
+        return defaultValue;
+      }
+    }
+
+    int getIntSafe(String key, int defaultValue) {
+      try {
+        return prefs.getInt(key) ?? defaultValue;
+      } catch (e) {
+        return defaultValue;
+      }
+    }
+
     return SshSettings(
-      host: prefs.getString(_keyHost) ?? defaultHost,
-      port: prefs.getInt(_keyPort) ?? defaultPort,
-      username: prefs.getString(_keyUsername) ?? defaultUsername,
-      authType: prefs.getString(_keyAuthType) ?? 'key',
-      keyPath: prefs.getString(_keyKeyPath) ?? defaultKeyPath,
-      password: prefs.getString(_keyPassword) ?? '',
-      linuxPath: prefs.getString(_keyLinuxPath) ?? defaultLinuxPath,
+      host: getStringSafe(_keyHost, defaultHost),
+      port: getIntSafe(_keyPort, defaultPort),
+      username: getStringSafe(_keyUsername, defaultUsername),
+      authType: getStringSafe(_keyAuthType, 'key'),
+      keyPath: getStringSafe(_keyKeyPath, defaultKeyPath),
+      password: getStringSafe(_keyPassword, ''),
+      linuxPath: getStringSafe(_keyLinuxPath, defaultLinuxPath),
     );
   }
 

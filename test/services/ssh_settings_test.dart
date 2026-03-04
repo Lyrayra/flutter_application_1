@@ -98,5 +98,23 @@ void main() {
       expect(prefs.getInt('ssh_port'), 1234);
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
+
+    test('load handles type exceptions gracefully and returns defaults', () async {
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 12345, // Invalid type for String
+        'ssh_port': 'not_an_int', // Invalid type for int
+        'ssh_username': true, // Invalid type for String
+      });
+
+      final settings = await SshSettings.load();
+      expect(settings.host, SshSettings.defaultHost);
+      expect(settings.port, SshSettings.defaultPort);
+      expect(settings.username, SshSettings.defaultUsername);
+      // Valid fallback for unchanged missing keys
+      expect(settings.authType, 'key');
+      expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.password, '');
+      expect(settings.linuxPath, SshSettings.defaultLinuxPath);
+    });
   });
 }
