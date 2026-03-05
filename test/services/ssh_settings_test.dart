@@ -98,5 +98,25 @@ void main() {
       expect(prefs.getInt('ssh_port'), 1234);
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
+
+    test('load handles TypeError per field and preserves valid data', () async {
+      // Set invalid types for some values, and valid types for others
+      SharedPreferences.setMockInitialValues({
+        'ssh_host': 123, // Expected String, got int
+        'ssh_port': 2222, // Valid port
+        'ssh_username': true, // Expected String, got bool
+        'ssh_auth_type': 'password', // Valid auth type
+      });
+
+      final settings = await SshSettings.load();
+
+      // Invalid fields should fall back to default values
+      expect(settings.host, SshSettings.defaultHost);
+      expect(settings.username, SshSettings.defaultUsername);
+
+      // Valid fields should be preserved
+      expect(settings.port, 2222);
+      expect(settings.authType, 'password');
+    });
   });
 }
