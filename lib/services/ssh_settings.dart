@@ -39,7 +39,7 @@ class SshSettings {
     String getStringSafe(String key, String defaultValue) {
       try {
         return prefs.getString(key) ?? defaultValue;
-      } catch (e) {
+      } on TypeError {
         return defaultValue;
       }
     }
@@ -47,7 +47,7 @@ class SshSettings {
     int getIntSafe(String key, int defaultValue) {
       try {
         return prefs.getInt(key) ?? defaultValue;
-      } catch (e) {
+      } on TypeError {
         return defaultValue;
       }
     }
