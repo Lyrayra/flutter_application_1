@@ -99,24 +99,22 @@ void main() {
       expect(prefs.getString('ssh_username'), SshSettings.defaultUsername);
     });
 
-    test('load handles TypeError per field and preserves valid data', () async {
-      // Set invalid types for some values, and valid types for others
+    test('load handles type exceptions gracefully and returns defaults', () async {
       SharedPreferences.setMockInitialValues({
-        'ssh_host': 123, // Expected String, got int
-        'ssh_port': 2222, // Valid port
-        'ssh_username': true, // Expected String, got bool
-        'ssh_auth_type': 'password', // Valid auth type
+        'ssh_host': 12345, // Invalid type for String
+        'ssh_port': 'not_an_int', // Invalid type for int
+        'ssh_username': true, // Invalid type for String
       });
 
       final settings = await SshSettings.load();
-
-      // Invalid fields should fall back to default values
       expect(settings.host, SshSettings.defaultHost);
+      expect(settings.port, SshSettings.defaultPort);
       expect(settings.username, SshSettings.defaultUsername);
-
-      // Valid fields should be preserved
-      expect(settings.port, 2222);
-      expect(settings.authType, 'password');
+      // Valid fallback for unchanged missing keys
+      expect(settings.authType, 'key');
+      expect(settings.keyPath, SshSettings.defaultKeyPath);
+      expect(settings.password, '');
+      expect(settings.linuxPath, SshSettings.defaultLinuxPath);
     });
   });
 }
